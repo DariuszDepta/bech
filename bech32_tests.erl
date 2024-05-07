@@ -25,3 +25,10 @@ encode_invalid_test_() ->
     ?_assertEqual({error, too_long_hrp}, bech32:encode(<<"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">>, <<>>)),
     ?_assertEqual({error, too_long}, bech32:encode(<<"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa">>, <<"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb">>))
   ].
+
+decode_valid_test_() ->
+  [
+    ?_assertEqual({ok, <<"a">>, <<>>}, bech32:decode(<<"a12uel5l">>)),
+    ?_assertEqual({ok, <<"a">>, <<>>}, bech32:decode(<<"A12UEL5L">>)),
+    ?_assertEqual({ok, <<"?">>, <<>>}, bech32:decode(<<"?1ezyfcl">>))
+  ].
