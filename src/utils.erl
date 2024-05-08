@@ -1,8 +1,6 @@
 -module(utils).
 -export([get_option/2]).
 
--include_lib("eunit/include/eunit.hrl").
-
 get_option(Key, Options) when is_atom(Key), is_list(Options) ->
   case [OptionValue || {OptionKey, OptionValue} <- lists:reverse(Options), OptionKey == Key] of
     [] -> [];
@@ -10,9 +8,12 @@ get_option(Key, Options) when is_atom(Key), is_list(Options) ->
     [Value | _] -> [Value]
   end.
 
-%%% ============================================================================
-%%%  Unit tests
-%%% ============================================================================
+%%%============================================================================
+%%% Unit tests
+%%%============================================================================
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
 
 get_option_test_() ->
   [
@@ -31,3 +32,5 @@ get_option_test_() ->
     % when multiple options specified with the same key, returns the last value
     ?_assertEqual([5], get_option(key2, [{key1, 1}, {key1, 2}, {key2, 3}, {key2, 4}, {key2, 5}]))
   ].
+
+-endif.

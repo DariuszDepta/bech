@@ -1,0 +1,13 @@
+{application, bech,
+ [{description, "bech32 and bech32m encoder and decoder"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+  {licenses, ["Apache-2.0"]},
+  {links, []}
+ ]}.

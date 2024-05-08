@@ -2,6 +2,11 @@
 
 ## Setup
 
+#### Create library
+
 ```shell
 $ rebar3 new lib bech
 ```
+
+
+

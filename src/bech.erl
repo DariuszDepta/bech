@@ -50,7 +50,7 @@ encode(Hrp, Data, CharCase) when is_binary(Hrp), is_binary(Data), is_atom(CharCa
 % Decodes content from specified human readable address in Bech32 format.
 % Extracts prefix and data, verifies the checksum.
 %
--spec decode(Input::binary()) -> {ok, Hrp::binary(), Data::binary()} | {error, Reason::atom()} | {error, Reason::atom(), Value::any()}.
+-spec decode(Input :: binary()) -> {ok, Hrp :: binary(), Data :: binary()} | {error, Reason :: atom()} | {error, Reason :: atom(), Value :: any()}.
 decode(Input) when is_binary(Input) ->
   InputList = string:to_lower(binary_to_list(Input)),
   case length(InputList) =< ?MaxTotalLength of
@@ -256,3 +256,18 @@ bits_to_binary([B7, B6, B5, B4, B3, B2, B1, B0], Bytes) ->
   bits_to_binary([], [<<B7:1, B6:1, B5:1, B4:1, B3:1, B2:1, B1:1, B0:1>> | Bytes]);
 bits_to_binary([B7, B6, B5, B4, B3, B2, B1, B0 | Bits], Bytes) ->
   bits_to_binary(Bits, [<<B7:1, B6:1, B5:1, B4:1, B3:1, B2:1, B1:1, B0:1>> | Bytes]).
+
+%%%============================================================================
+%%% Unit tests
+%%%============================================================================
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+
+char_test_() ->
+  Actual = list_to_binary(lists:foldr(fun(X, Acc) -> [char(X) | Acc] end, [], lists:seq(0, 31))),
+  [
+    ?_assertEqual(<<"qpzry9x8gf2tvdw0s3jn54khce6mua7l">>, Actual)
+  ].
+
+-endif.
