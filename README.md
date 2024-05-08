@@ -1,4 +1,4 @@
-# bech32 and bech32m encoder/decoder
+# bech32 & bech32m encoder/decoder
 
 ## Setup
 
