@@ -30,7 +30,8 @@ encode(Hrp, Data) when is_binary(Hrp), is_binary(Data) ->
 % prefix and data. All output characters are either lowercase or uppercase,
 % depending on provided options.
 %
-encode(Hrp, Data, CharCase) when is_binary(Hrp), is_binary(Data), is_atom(CharCase) ->
+encode(Hrp, Data, Options) when is_binary(Hrp), is_binary(Data), is_list(Options) ->
+  [CharCase] = utils:get_option(char_case, Options, lower),
   HrpList = binary_to_list(Hrp),
   case expand_hrp(HrpList) of
     {ok, ExpandedHrp} ->
