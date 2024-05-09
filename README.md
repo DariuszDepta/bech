@@ -19,10 +19,22 @@ For some reason, it maybe practical to make `rebar3` global:
 $ sudo cp ~/.cache/rebar3/bin/rebar3 /usr/local/bin
 ```
 
-### Create this library
+### Library was initially created this way 
 
 ```shell
 $ rebar3 new lib bech
+```
+
+### Build
+
+```shell
+$ rebar3 compile
+```
+
+### Test
+
+```shell
+$ rebar3 eunit
 ```
 
 
