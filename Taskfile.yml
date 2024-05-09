@@ -1,0 +1,26 @@
+version: '3'
+
+silent: true
+
+tasks:
+
+  build:
+    desc: Builds this library
+    cmds:
+      - cmd: rebar3 compile
+
+  clean:
+    desc: Removes all generated content
+    cmds:
+      - cmd: rebar3 clean
+      - cmd: rm -rf _build
+
+  shell:
+    desc: Runs a shell with this library as dependencies
+    cmds:
+      - cmd: rebar3 shell
+
+  test:
+    desc: Runs all tests
+    cmds:
+      - cmd: rebar3 eunit
