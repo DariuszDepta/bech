@@ -28,8 +28,8 @@ get_option(Key, Options, Default) when is_atom(Key), is_list(Options) ->
 
 % Returns SHA256 digest for provided data.
 %
--spec sha256(Data :: binary()) -> binary().
-sha256(Data) when is_binary(Data) ->
+-spec sha256(Data :: iodata()) -> Digest :: binary().
+sha256(Data) ->
   crypto:hash(sha256, Data).
 
 %%%============================================================================
