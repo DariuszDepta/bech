@@ -1,11 +1,19 @@
 -module(bech).
 -export([encode/2, encode/3, decode/1]).
 
+-define(Gen, [16#3b6a57b2, 16#26508e6d, 16#1ea119fa, 16#3d4233dd, 16#2a1462b3]).
+-define(ResidueBech32, 16#1).
+-define(ResidueBech32m, 16#2bc830a3).
 -define(HrpSeparator, $1).
 -define(ChecksumLength, 6).
 -define(MaxHrpLength, 83).
 -define(MaxTotalLength, 90).
--define(Gen, [16#3b6a57b2, 16#26508e6d, 16#1ea119fa, 16#3d4233dd, 16#2a1462b3]).
+-define(EncodingBech32, bech32).
+-define(EncodingBech32m, bech32m).
+-define(CharCaseLower, lower).
+-define(CharCaseUpper, upper).
+-define(OptionCharCase, char_case).
+-define(OptionEncoding, encoding).
 
 -define(ErrNoHrp, no_hrp).
 -define(ErrNoHrpSeparator, no_hrp_separator).
@@ -23,21 +31,24 @@
 % Generates human readable address in Bech32 format, basing on provided
 % prefix and data; all characters are lowercase.
 %
+-spec encode(Hrp :: binary(), Data :: binary()) -> {ok, Address :: binary()} | {error, Reason :: any()}.
 encode(Hrp, Data) when is_binary(Hrp), is_binary(Data) ->
-  encode(Hrp, Data, lower).
+  encode(Hrp, Data, [{char_case, lower}]).
 
 % Generates human readable address in Bech32 format, basing on provided
 % prefix and data. All output characters are either lowercase or uppercase,
 % depending on provided options.
 %
+-spec encode(Hrp :: binary(), Data :: binary(), Options :: list()) -> {ok, Address :: binary()} | {error, Reason :: any()}.
 encode(Hrp, Data, Options) when is_binary(Hrp), is_binary(Data), is_list(Options) ->
-  [CharCase] = utils:get_option(char_case, Options, lower),
+  [CharCase] = utils:get_option(?OptionCharCase, Options, ?CharCaseLower),
+  [Encoding] = utils:get_option(?OptionEncoding, Options, ?EncodingBech32),
   HrpList = binary_to_list(Hrp),
   case expand_hrp(HrpList) of
     {ok, ExpandedHrp} ->
       Base32Data = binary_to_base32(Data),
       Values = lists:flatten([ExpandedHrp, Base32Data, [0, 0, 0, 0, 0, 0]]),
-      PolyMod = polymod(Values) bxor 1,
+      PolyMod = polymod(Values) bxor residue(Encoding),
       Checksum = lists:map(fun(X) -> char((PolyMod bsr (5 * (5 - X))) band 16#1F) end, [0, 1, 2, 3, 4, 5]),
       EncodedData = lists:map(fun(X) -> char(X) end, Base32Data),
       Encoded = char_case(lists:flatten([HrpList, [?HrpSeparator], EncodedData, Checksum]), CharCase),
@@ -63,11 +74,11 @@ decode(Input) when is_binary(Input) ->
           case expand_hrp(Hrp) of
             {ok, ExpandedHrp} ->
               case characters_to_base32(DataAndChecksum, []) of
-                {ok, DecodedData} ->
-                  Values = lists:flatten([ExpandedHrp, DecodedData]),
-                  case polymod(Values) == 1 of
+                {ok, DecodedDataAndChecksum} ->
+                  PolyMod = polymod(lists:flatten([ExpandedHrp, DecodedDataAndChecksum])),
+                  case (PolyMod == ?ResidueBech32) or (PolyMod == ?ResidueBech32m) of
                     true ->
-                      {Decoded, _} = lists:split(length(DecodedData) - ?ChecksumLength, DecodedData),
+                      {Decoded, _} = lists:split(length(DecodedDataAndChecksum) - ?ChecksumLength, DecodedDataAndChecksum),
                       {ok, list_to_binary(Hrp), base32_to_binary(Decoded)};
                     false ->
                       {error, ?ErrInvalidChecksum}
@@ -98,10 +109,15 @@ extract_hrp([?HrpSeparator | _], _) ->
 extract_hrp([Ch | Hrp], Data) ->
   extract_hrp(Hrp, [Ch | Data]).
 
-char_case(List, upper) ->
+char_case(List, ?CharCaseUpper) ->
   string:to_upper(List);
 char_case(List, _) ->
   List.
+
+residue(?EncodingBech32m) ->
+  ?ResidueBech32m;
+residue(_) ->
+  ?ResidueBech32.
 
 expand_hrp([]) ->
   {error, ?ErrNoHrp};
@@ -273,7 +289,8 @@ char_test_() ->
   ].
 
 value_test_() ->
-  Actual = lists:foldr(fun(X, Acc) -> {ok, Value} = value(X), [Value | Acc] end, [], binary_to_list(<<"qpzry9x8gf2tvdw0s3jn54khce6mua7l">>)),
+  Actual = lists:foldr(fun(X, Acc) -> {ok, Value} = value(X),
+    [Value | Acc] end, [], binary_to_list(<<"qpzry9x8gf2tvdw0s3jn54khce6mua7l">>)),
   [
     ?_assertEqual(lists:seq(0, 31), Actual),
     ?_assertEqual({error, {invalid_character, 98}}, value($b))

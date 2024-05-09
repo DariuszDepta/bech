@@ -1,5 +1,5 @@
 -module(utils).
--export([get_option/2, get_option/3]).
+-export([get_option/2, get_option/3, sha256/1]).
 
 %%%=============================================================================
 %%%  Public functions
@@ -25,6 +25,9 @@ get_option(Key, Options, Default) when is_atom(Key), is_list(Options) ->
     [] -> [Default];
     Other -> Other
   end.
+
+sha256(Data) when is_binary(Data) ->
+  crypto:hash(sha256, Data).
 
 %%%============================================================================
 %%% Unit tests
