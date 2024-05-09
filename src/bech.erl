@@ -5,18 +5,20 @@
 -define(ChecksumLength, 6).
 -define(MaxHrpLength, 83).
 -define(MaxTotalLength, 90).
+-define(Gen, [16#3b6a57b2, 16#26508e6d, 16#1ea119fa, 16#3d4233dd, 16#2a1462b3]).
 
 -define(ErrNoHrp, no_hrp).
 -define(ErrNoHrpSeparator, no_hrp_separator).
 -define(ErrHrpLengthExceeded, hrp_length_exceeded).
 -define(ErrTooShortChecksum, too_short_checksum).
 -define(ErrInvalidChecksum, invalid_checksum).
+-define(ErrInvalidHrpCharacter, invalid_hrp_character).
 -define(ErrInvalidCharacter, invalid_character).
 -define(ErrTotalLengthExceeded, total_length_exceeded).
 
-%%% ============================================================================
+%%%=============================================================================
 %%%  Public functions
-%%% ============================================================================
+%%%=============================================================================
 
 % Generates human readable address in Bech32 format, basing on provided
 % prefix and data; all characters are lowercase.
@@ -42,15 +44,15 @@ encode(Hrp, Data, CharCase) when is_binary(Hrp), is_binary(Data), is_atom(CharCa
         true ->
           {ok, list_to_binary(Encoded)};
         false ->
-          {error, ?ErrTotalLengthExceeded, length(Encoded)}
+          {error, {?ErrTotalLengthExceeded, length(Encoded)}}
       end;
-    Error -> Error
+    Other -> Other
   end.
 
-% Decodes content from specified human readable address in Bech32 format.
-% Extracts prefix and data, verifies the checksum.
+% Decodes the content from specified human readable address in Bech32 format.
+% Extracts the prefix and data, verifies the checksum.
 %
--spec decode(Input :: binary()) -> {ok, Hrp :: binary(), Data :: binary()} | {error, Reason :: atom()} | {error, Reason :: atom(), Value :: any()}.
+-spec decode(Input :: binary()) -> {ok, Hrp :: binary(), Data :: binary()} | {error, Reason :: any()}.
 decode(Input) when is_binary(Input) ->
   InputList = string:to_lower(binary_to_list(Input)),
   case length(InputList) =< ?MaxTotalLength of
@@ -72,17 +74,17 @@ decode(Input) when is_binary(Input) ->
                 Other ->
                   Other
               end;
-            Error -> Error
+            Other -> Other
           end;
-        Error -> Error
+        Other -> Other
       end;
     false ->
-      {error, ?ErrTotalLengthExceeded, length(InputList)}
+      {error, {?ErrTotalLengthExceeded, length(InputList)}}
   end.
 
-%%% ============================================================================
+%%%=============================================================================
 %%%  Private functions
-%%% ============================================================================
+%%%=============================================================================
 
 extract_hrp([], _) ->
   {error, ?ErrNoHrpSeparator};
@@ -103,15 +105,15 @@ char_case(List, _) ->
 expand_hrp([]) ->
   {error, ?ErrNoHrp};
 expand_hrp(Hrp) when length(Hrp) > ?MaxHrpLength ->
-  {error, ?ErrHrpLengthExceeded, length(Hrp)};
+  {error, {?ErrHrpLengthExceeded, length(Hrp)}};
 expand_hrp(Hrp) when is_list(Hrp) ->
-  case lists:all(fun(Ch) -> (Ch >= 33) and (Ch =< 126) end, Hrp) of
-    true ->
+  case lists:search(fun(Ch) -> (Ch < 33) or (Ch > 126) end, Hrp) of
+    false ->
       UpperPart = lists:map(fun(C) -> C bsr 5 end, Hrp),
       LowerPart = lists:map(fun(C) -> C band 16#1F end, Hrp),
       {ok, lists:flatten([UpperPart, [0], LowerPart])};
-    false ->
-      {error, invalid_hrp_character}
+    {value, Ch} ->
+      {error, {?ErrInvalidHrpCharacter, Ch}}
   end.
 
 polymod(Values) when is_list(Values) ->
@@ -119,7 +121,7 @@ polymod(Values) when is_list(Values) ->
     B = Chk bsr 25,
     Chk1 = ((Chk band 16#1FFFFFF) bsl 5) bxor Value,
     <<_:3, B4:1, B3:1, B2:1, B1:1, B0:1>> = <<B:8>>,
-    Coefficients = lists:zip([B0, B1, B2, B3, B4], [16#3b6a57b2, 16#26508e6d, 16#1ea119fa, 16#3d4233dd, 16#2a1462b3]),
+    Coefficients = lists:zip([B0, B1, B2, B3, B4], ?Gen),
     X = [Gen || {Flag, Gen} <- Coefficients, Flag == 1],
     lists:foldl(fun(Gen, Acc) -> Acc bxor Gen end, Chk1, X)
       end,
@@ -190,7 +192,7 @@ value($u) -> {ok, 28};
 value($a) -> {ok, 29};
 value($7) -> {ok, 30};
 value($l) -> {ok, 31};
-value(Ch) -> {error, ?ErrInvalidCharacter, Ch}.
+value(Ch) -> {error, {?ErrInvalidCharacter, Ch}}.
 
 characters_to_base32([], Base32) ->
   {ok, lists:reverse(Base32)};
@@ -198,8 +200,7 @@ characters_to_base32([Ch | Tail], Base32) ->
   case value(Ch) of
     {ok, Value} ->
       characters_to_base32(Tail, [Value | Base32]);
-    {error, Reason, Ch} ->
-      {error, Reason, Ch}
+    Other -> Other
   end.
 
 binary_to_base32(Binary) when is_binary(Binary) ->
@@ -268,6 +269,13 @@ char_test_() ->
   Actual = list_to_binary(lists:foldr(fun(X, Acc) -> [char(X) | Acc] end, [], lists:seq(0, 31))),
   [
     ?_assertEqual(<<"qpzry9x8gf2tvdw0s3jn54khce6mua7l">>, Actual)
+  ].
+
+value_test_() ->
+  Actual = lists:foldr(fun(X, Acc) -> {ok, Value} = value(X), [Value | Acc] end, [], binary_to_list(<<"qpzry9x8gf2tvdw0s3jn54khce6mua7l">>)),
+  [
+    ?_assertEqual(lists:seq(0, 31), Actual),
+    ?_assertEqual({error, {invalid_character, 98}}, value($b))
   ].
 
 -endif.
