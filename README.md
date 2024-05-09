@@ -7,12 +7,12 @@
 ```shell
 $ sudo dnf install erlang
 ```
-
-of follow these [instructions](https://www.erlang.org/downloads).
+or follow these [instructions](https://www.erlang.org/downloads).
 
 ### Install rebar3
 
-Follow these [instructions](https://rebar3.org/docs/getting-started/).
+[Download rebar3 script](https://s3.amazonaws.com/rebar3/rebar3)
+and follow these [instructions](https://rebar3.org/docs/getting-started/).
 
 ### Create this library
 
