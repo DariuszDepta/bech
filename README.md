@@ -14,6 +14,11 @@ or follow these [instructions](https://www.erlang.org/downloads).
 [Download rebar3 script](https://s3.amazonaws.com/rebar3/rebar3)
 and follow these [instructions](https://rebar3.org/docs/getting-started/).
 
+For some reason, it maybe practical to make `rebar3` global:
+```shell
+$ sudo cp ~/.cache/rebar3/bin/rebar3 /usr/local/bin
+```
+
 ### Create this library
 
 ```shell
