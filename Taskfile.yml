@@ -15,6 +15,14 @@ tasks:
       - cmd: rebar3 clean
       - cmd: rm -rf _build
 
+  cov:
+    desc: Generate code coverage report
+    cmds:
+      - task: clean
+      - cmd: rebar3 eunit --cover
+      - cmd: rebar3 cover
+      - cmd: echo -e "\n\e[1;32mOpen coverage report\x3A\e[0m file:///$(pwd)/_build/test/cover/index.html\n"
+
   shell:
     desc: Runs a shell with this library as dependencies
     cmds:
@@ -23,4 +31,5 @@ tasks:
   test:
     desc: Runs all tests
     cmds:
+      - task: clean
       - cmd: rebar3 eunit
